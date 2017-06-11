@@ -40,6 +40,14 @@ def setup():
 
 def run():
     print("run")
+    
+    
+def new_message(contactname):
+    message = _generate_message(contactname)
+    _update_schedule(contactname, message, None)
+
+
+
 
 
 def _firedate(contactname):
@@ -47,13 +55,32 @@ def _firedate(contactname):
     # an appropriate timestamp.
     timestamp = int(time.time())
     return timestamp
+    
+def _generate_message(contactname):
+    messages = _messages(contactname)
+    message = random.choice(messages)     
+    message = _modify_message(message)
+    return message
+    
+def _modify_message(message):
+    
+    # Lowercase string
+    rnum = random.randrange(0, 3)
+    if rnum == 0:
+        message = message.lower()
+    
+    # Remove last character unless it's a question mark or an emoji.
+    rnum = random.randrange(0, 2)
+    if rnum == 0 and "?" not in message:
+        message = message[:-1]
+        
+    return message
 
 
 def _message(contactname):
-    messages = _messages(contactname)
-    message = random.choice(messages)
-#    print(random.choice(messages))
-    _update_schedule(contactname, message)
+    message = _generate_message(contactname)
+    timestamp = _firedate(contactname)
+    _update_schedule(contactname, message, timestamp)
 
 
 def _messages(contactname):
@@ -64,23 +91,20 @@ def _messages(contactname):
             for field in row:
                 if field == contactname:
                     contacttype = row[1]
-#                    print(row)
 
     if contacttype != None:
         columns = defaultdict(list)
 
-#        print("contact type:"+ contacttype)
         with open("messages.csv", 'r') as f:
             reader = csv.DictReader(f)
             for row in reader:
                 for (k,v) in row.items(): # go over each column name and value
                     columns[k].append(v) # append the value into the appropriate list
 
-#        print(columns[contacttype])
         return columns[contacttype]
 
-def _update_schedule(contactname, message):
-    timestamp = _firedate(contactname)
+
+def _update_schedule(contactname, message, timestamp):
 
     updatedline = None
 
@@ -103,7 +127,8 @@ def _update_schedule(contactname, message):
             for row in reader:
                 if reader.line_num == updatedline:
                     row[1] = message
-                    row[2] = timestamp
+                    if timestamp != None:
+                        row[2] = timestamp
                     
                 writer.writerow(row)
 
